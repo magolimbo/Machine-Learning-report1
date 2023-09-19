@@ -13,7 +13,7 @@ import pandas as pd
 
 
 doc = xlrd.open_workbook(
-    r'C:\Users\Dell\OneDrive - Danmarks Tekniske Universitet\Machine learning Fall23\Movies_DS.xls').sheet_by_index(0)
+    r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\Movies_DS.xls").sheet_by_index(0)
 
 # extract attributes/features names
 attributeNames = doc.row_values(0, 0, 8)
