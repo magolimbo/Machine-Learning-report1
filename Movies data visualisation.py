@@ -12,20 +12,23 @@ from sklearn import decomposition
 import pandas as pd
 
 
-doc = xlrd.open_workbook("Movies_DS.xls").sheet_by_index(0)
+doc = xlrd.open_workbook(
+    r'C:\Users\Dell\OneDrive - Danmarks Tekniske Universitet\Machine learning Fall23\Movies_DS.xls').sheet_by_index(0)
 
-#extract attributes/features names
+# extract attributes/features names
 attributeNames = doc.row_values(0, 0, 8)
 print(attributeNames)
 
-#extract movie names
+# extract movie names
 classLabels = doc.col_values(1, 1, 636)
-classLabelsnodups = set(classLabels) #with set() all the rows with the same movie title feature are removed
-print("the original dataset has "+ str(len(classLabels) - len(classLabelsnodups)) + " duplicates")
+# with set() all the rows with the same movie title feature are removed
+classLabelsnodups = set(classLabels)
+print("the original dataset has " +
+      str(len(classLabels) - len(classLabelsnodups)) + " duplicates")
 
-X = np.empty((len(classLabels), len(attributeNames))) #matrice 635 x 8 colonne
-X[:, 0] = classLabels
-
+# matrice 635 x 8 colonne
+X = np.empty((len(classLabels), len(attributeNames)))
+# X[:, 0] = classLabels
 
 
 # # MOVIES DOC
