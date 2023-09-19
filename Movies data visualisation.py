@@ -1,68 +1,60 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Sep  9 17:44:15 2023
-
-@author: Dell
+@Authors
 """
 
+from pandas.plotting import scatter_matrix
+import pandas as pd
+import xlrd
 import numpy as np
 import matplotlib.pyplot as plt
-import xlrd
-from sklearn import decomposition
-import pandas as pd
+
+file_path = r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\Movies_DS.xls"
+doc = xlrd.open_workbook(file_path).sheet_by_index(0)
+
+# Extract attribute names
+attributeNames = doc.row_values(0, 2, 9)
+
+# Extract MPAA names to python list, then encode with integers (dict)
+mpaa = doc.col_values(3, 2, 636)
+mpaa_name = sorted(set(mpaa))   # set because it deletes the duplicates
+mpaaDict = dict(zip(mpaa_name, range(5)))
+
+# Extract GENRE names to python list, then encode with integers (dict)
+# the column Genre was moved to this position in excel
+genre = doc.col_values(2, 2, 636)
+genre_name = sorted(set(genre))
+genreDict = dict(zip(genre_name, range(18)))
+
+title = doc.col_values(1, 2, 636)
+title_name = sorted(set(title))
+titleDict = dict(zip(title_name, range(627)))
+
+# Extract vector y, convert to NumPy array
+y_mpaa = np.array([mpaaDict[value] for value in mpaa])
+y_genre = np.array([genreDict[value] for value in genre])
+y_title = np.array([titleDict[value] for value in title])
+
+# Create a dataframe from the data
+data = pd.DataFrame({'MPAA_Rating': y_mpaa, 'genre': y_genre, 'title': y_title, 'Budget': doc.col_values(4, 2, 636),
+                     'Gross': doc.col_values(5, 2, 636), 'release_date': doc.col_values(6, 2, 636),
+                     'runtime': doc.col_values(7, 2, 636), 'rating': doc.col_values(8, 2, 636), 'rating_count': doc.col_values(9, 2, 636)})
 
 
-doc = xlrd.open_workbook(
-    r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\Movies_DS.xls").sheet_by_index(0)
+# DATA CLEANING
+# Remove duplicates based on the "title" column
+data = data.drop_duplicates(subset='title', keep='first')
 
-# extract attributes/features names
-attributeNames = doc.row_values(0, 0, 10)
-print(attributeNames)
-dtypes = [('movieID', int), ('title', '<U26')]
-# dtypes = [('movieID', int), ('title', '<U26'), ('MPAA_Rating', '<U26'), ('Budget', float), ('Gross', float),
-#           ('release_date', '<U26'), ('genre', '<U26'), ('runtime', int), ('rating', float), ('rating_count', int)]
-
-# types= [int,'<U26','<U26',float,]
-
-# extract movie names
-moviesNames = doc.col_values(1, 1, 636)
-# with set() all the rows with the same movie title feature are removed
-classLabelsnodups = set(moviesNames)
-print("the original dataset has " +
-      str(len(moviesNames) - len(classLabelsnodups)) + " duplicates")
-
-X = np.empty((635,), dtype=dtypes)
-
-X['movieID'] = range(635)
-X['title'] = np.asarray(moviesNames, dtype='<U26')
+# Extract X and y from the cleaned dataframe
+X = data[['MPAA_Rating', 'genre', 'Budget', 'Gross',
+          'release_date', 'runtime', 'rating', 'rating_count']].values
+y_mpaa = data['MPAA_Rating'].values
+y_genre = data['genre'].values
 
 
-# for i, col_id in enumerate(range(4, 5)):
-#     X[:, i] = np.array(doc.col_values(col_id, 1, 637))
-
-# matrice 635 x 8 colonne
-# X = np.empty((len(moviesNames), len(attributeNames)))
-# X[:, 0] = classLabels
-
-# Data attributes to be plotted
-# gross = 4
-
-# plt.figure(1)
-# plt.plot(moviesNames, X[:, gross], 'o')
-# plt.show()
-# ##
-# # Make a simple plot of the i'th attribute against the j'th attribute
-# # Notice that X is of matrix type (but it will also work with a numpy array)
-# X = np.array(X)  # Try to uncomment this line
-
-
-# # Make another more fancy plot that includes legend, class labels,
-# # attribute names, and a title.
-
-# plt.title('NanoNose data')
-
-# plt.xlabel("Budget")
-# plt.ylabel("Gross")
-
-# # Output result to screen
-# plt.show()
+# Don't know if this is needed
+N_mpaa = len(y_mpaa)
+N_genre = len(y_genre)
+M = len(attributeNames)
+C_mpaa = len(mpaa_name)
+C_genre = len(genre_name)
