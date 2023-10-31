@@ -10,7 +10,6 @@ import pandas as pd
 from pandas.plotting import scatter_matrix
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
-<< << << < HEAD
 # -*- coding: utf-8 -*-
 """
 NEW ONE
@@ -28,7 +27,7 @@ mpaa = doc.col_values(3, 2, 636)
 mpaa_name = sorted(set(mpaa))   # set because it deletes the duplicates
 mpaaDict = dict(zip(mpaa_name, range(5)))
 
-# Extract GENRE names to python list, then encode with integers (dict)
+# Extract names to python list, then encode with integers (dict)
 # the column Genre was moved to this position in excel
 genre = doc.col_values(2, 2, 636)
 genre_name = sorted(set(genre))
@@ -38,10 +37,15 @@ title = doc.col_values(1, 2, 636)
 title_name = sorted(set(title))
 titleDict = dict(zip(title_name, range(627)))
 
+rating = doc.col_values(8, 2, 636)
+rating_name = sorted(set(rating))
+ratDict = dict(zip(rating_name, range(627)))
+
 # Extract vector y, convert to NumPy array
 y_mpaa = np.array([mpaaDict[value] for value in mpaa])
 y_genre = np.array([genreDict[value] for value in genre])
 y_title = np.array([titleDict[value] for value in title])
+y_rat = np.array([ratDict[value] for value in rating])
 
 # Create a dataframe from the data
 data = pd.DataFrame({'MPAA_Rating': y_mpaa, 'genre': y_genre, 'title': y_title, 'Budget': doc.col_values(4, 2, 636),
@@ -58,28 +62,44 @@ X = data[['MPAA_Rating', 'genre', 'Budget', 'Gross',
           'release_date', 'runtime', 'rating', 'rating_count']].values
 y_mpaa = data['MPAA_Rating'].values
 y_genre = data['genre'].values
-y_gross = data['Gross'].values > 2*data['Budget'].values
+y_gross = data['Gross'].values > 4*data['Budget'].values
+y_rat = data['rating'].values > 7
 
-# Don't know if this is needed
 N_mpaa = len(y_mpaa)
 N_genre = len(y_genre)
 M = len(attributeNames)
 C_mpaa = len(mpaa_name)
 C_genre = len(genre_name)
 
+# Creating dictionaries
 genreNames = [gen for gen in genreDict]
 mpaaNames = [mpa for mpa in mpaaDict]
+ratingNames = [rat for rat in ratDict]
 
 # Select subset of digits classes to be inspected
 class_mask = np.zeros(N_mpaa).astype(bool)
 
 # Selection of the genree to visualize
-genres = range(18)
-mpaas = [3, 1]
-gross = [0, 1]
+# genres = range(18)
+genres = [0, 2, 9, 15]
+# mpaas = [1, 3]
+# gross = [0, 1]
+# ratings = [0, 1, 2, 3]
 
-for v in gross:
-    cmsk = y_gross == v
+# =============================================================================
+# for v in gross:
+#     cmsk = y_gross == v
+#     class_mask = class_mask | cmsk
+# =============================================================================
+
+# =============================================================================
+# for v in ratings:
+#     cmsk = y_rat == v
+#     class_mask = class_mask | cmsk
+# =============================================================================
+
+for v in genres:
+    cmsk = y_genre == v
     class_mask = class_mask | cmsk
 
 # =============================================================================
@@ -87,14 +107,15 @@ for v in gross:
 #     cmsk = y_mpaa == v
 #     class_mask = class_mask | cmsk
 # =============================================================================
-
 X = X[class_mask, :]
 # y_mpaa = y_mpaa[class_mask]
-y_gross = y_gross[class_mask]
+y_genre = y_genre[class_mask]
+# y_gross = y_gross[class_mask]
+# y_rat = y_rat[class_mask]
 
 N = X.shape[0]
 
-
+## PCA
 Xc = X - np.ones((N, 1))*X.mean(axis=0)
 Xc = Xc*(1/np.std(X, 0))
 # PCA by computing SVD of Y
@@ -109,7 +130,10 @@ Z = Xc @ V
 # threshold = sum(rho[:4])
 threshold = 0.8
 
-# print(f'{threshold*100}%')
+# # Create a new figure with 2D projection
+fig = plt.figure()
+ax = fig.add_subplot(111)
+plt.title('Movies Genres projected on PCs')
 
 # =============================================================================
 # # PCs CUMULATIVE PLOT
@@ -129,71 +153,30 @@ threshold = 0.8
 # =============================================================================
 
 # =============================================================================
-# f = figure()
-# plt.title('Movies digits projected on PCs')
-#
-# for c in genres:
-#     # select indices belonging to class c:
-#     class_mask = (y_genre == c)
-#     plot(Z[class_mask, 0], Z[class_mask, 1], 'o')
-# legend(genreNames)
-# xlabel('PC1')
-# ylabel('PC2')
-#
-# =============================================================================
-
-
-# Create a new figure with 3D projection
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-plt.title('Movies observations projected on PCs')
-
-# =============================================================================
-# ##MPAA
+# # MPAA
 # colors = ['g', '#e67e22', '#8e44ad', 'r']
 #
 # for c in mpaas:
 #     # Select indices belonging to class c
 #     class_mask = (y_mpaa == c)
 #     ax.scatter(Z[class_mask, 0], Z[class_mask, 1],
-#                Z[class_mask, 2], marker='o', label=mpaaNames[c], s=50,
+#                marker='o', label=mpaaNames[c], s=50,
 #                color=colors[c], alpha=0.9)
-# =============================================================================
-
-
-# =============================================================================
-# ##GENRES
-# for c in genres:
-#     # Select indices belonging to class c
-#     class_mask = (y_genre == c)
-#     ax.scatter(Z[class_mask, 0], Z[class_mask, 1],
-#                Z[class_mask, 2], marker='o', s=50, alpha=0.9)
-#
-# ax.set_xlabel('PC1')
-# ax.set_ylabel('PC2')
-# ax.set_zlabel('PC3')
-#
-# # Add a legend
-# ax.legend()
-#
-# # Show the 3D plot
+# plt.legend()
 # plt.show()
 # =============================================================================
 
-# GROSS
-for c in gross:
+# GENRES
+for c in genres:
     # Select indices belonging to class c
-    class_mask = (y_gross == c)
+    class_mask = (y_genre == c)
     ax.scatter(Z[class_mask, 0], Z[class_mask, 1],
-               Z[class_mask, 2], marker='o', s=50, alpha=1)
+               marker='o', s=50, alpha=0.9, label=genreNames[c])
 
 ax.set_xlabel('PC1')
 ax.set_ylabel('PC2')
-ax.set_zlabel('PC3')
 
-# Add a legend
-ax.legend()
-
+plt.legend()
 # Show the 3D plot
 plt.show()
 
@@ -422,149 +405,151 @@ plt.show()
 # plt.show()
 # =============================================================================
 
-
-# -*- coding: utf-8 -*-
-"""
-DETAILS
-
-"""
-
-
-file_path = r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\Movies_DS.xls"
-doc = xlrd.open_workbook(file_path).sheet_by_index(0)
-
-# Extract attribute names
-attributeNames = doc.row_values(0, 2, 9)
-
-# Extract MPAA names to python list, then encode with integers (dict)
-mpaa = doc.col_values(3, 2, 636)
-mpaa_name = sorted(set(mpaa))   # set because it deletes the duplicates
-mpaaDict = dict(zip(mpaa_name, range(5)))
-
-# Extract GENRE names to python list, then encode with integers (dict)
-# the column Genre was moved to this position in excel
-genre = doc.col_values(2, 2, 636)
-genre_name = sorted(set(genre))
-genreDict = dict(zip(genre_name, range(18)))
-
-title = doc.col_values(1, 2, 636)
-title_name = sorted(set(title))
-titleDict = dict(zip(title_name, range(627)))
-
-# Extract vector y, convert to NumPy array
-y_mpaa = np.array([mpaaDict[value] for value in mpaa])
-y_genre = np.array([genreDict[value] for value in genre])
-y_title = np.array([titleDict[value] for value in title])
-
-# Create a dataframe from the data
-data = pd.DataFrame({'MPAA_Rating': y_mpaa, 'genre': y_genre, 'title': y_title, 'Budget': doc.col_values(4, 2, 636),
-                     'Gross': doc.col_values(5, 2, 636), 'release_date': doc.col_values(6, 2, 636),
-                     'runtime': doc.col_values(7, 2, 636), 'rating': doc.col_values(8, 2, 636), 'rating_count': doc.col_values(9, 2, 636)})
-
-
-# DATA CLEANING
-# Remove duplicates based on the "title" column
-data = data.drop_duplicates(subset='title', keep='first')
-
-# Extract X and y from the cleaned dataframe
-X = data[['MPAA_Rating', 'genre', 'Budget', 'Gross',
-          'release_date', 'runtime', 'rating', 'rating_count']].values
-y_mpaa = data['MPAA_Rating'].values
-y_genre = data['genre'].values
-
-
-# Don't know if this is needed
-N_mpaa = len(y_mpaa)
-N_genre = len(y_genre)
-M = len(attributeNames)
-C_mpaa = len(mpaa_name)
-C_genre = len(genre_name)
-
-# REGRESSION
-
-# Budget vs. Gross Scatterplot
-plt.figure(figsize=(8, 6))
-plt.scatter(X[:, 2], data['Gross'], alpha=0.5)
-plt.xlabel('Budget')
-plt.ylabel('Gross')
-plt.title('Budget vs. Gross Scatterplot')
-plt.show()
-# Release Date vs. Gross Line Plot
 # =============================================================================
-# plt.figure(figsize=(12, 6))
-# data.groupby('release_date')['Gross'].mean().plot()
-# plt.xlabel('Release Date')
-# plt.ylabel('Average Gross')
-# plt.title('Release Date vs. Average Gross')
-# plt.xticks(rotation=45)
-# plt.show()
-# =============================================================================
-# # Runtime vs. Gross Scatterplot
+#
+# # -*- coding: utf-8 -*-
+# """
+# DETAILS
+#
+# """
+#
+#
+# file_path = r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\Movies_DS.xls"
+# doc = xlrd.open_workbook(file_path).sheet_by_index(0)
+#
+# # Extract attribute names
+# attributeNames = doc.row_values(0, 2, 9)
+#
+# # Extract MPAA names to python list, then encode with integers (dict)
+# mpaa = doc.col_values(3, 2, 636)
+# mpaa_name = sorted(set(mpaa))   # set because it deletes the duplicates
+# mpaaDict = dict(zip(mpaa_name, range(5)))
+#
+# # Extract GENRE names to python list, then encode with integers (dict)
+# # the column Genre was moved to this position in excel
+# genre = doc.col_values(2, 2, 636)
+# genre_name = sorted(set(genre))
+# genreDict = dict(zip(genre_name, range(18)))
+#
+# title = doc.col_values(1, 2, 636)
+# title_name = sorted(set(title))
+# titleDict = dict(zip(title_name, range(627)))
+#
+# # Extract vector y, convert to NumPy array
+# y_mpaa = np.array([mpaaDict[value] for value in mpaa])
+# y_genre = np.array([genreDict[value] for value in genre])
+# y_title = np.array([titleDict[value] for value in title])
+#
+# # Create a dataframe from the data
+# data = pd.DataFrame({'MPAA_Rating': y_mpaa, 'genre': y_genre, 'title': y_title, 'Budget': doc.col_values(4, 2, 636),
+#                      'Gross': doc.col_values(5, 2, 636), 'release_date': doc.col_values(6, 2, 636),
+#                      'runtime': doc.col_values(7, 2, 636), 'rating': doc.col_values(8, 2, 636), 'rating_count': doc.col_values(9, 2, 636)})
+#
+#
+# # DATA CLEANING
+# # Remove duplicates based on the "title" column
+# data = data.drop_duplicates(subset='title', keep='first')
+#
+# # Extract X and y from the cleaned dataframe
+# X = data[['MPAA_Rating', 'genre', 'Budget', 'Gross',
+#           'release_date', 'runtime', 'rating', 'rating_count']].values
+# y_mpaa = data['MPAA_Rating'].values
+# y_genre = data['genre'].values
+#
+#
+# # Don't know if this is needed
+# N_mpaa = len(y_mpaa)
+# N_genre = len(y_genre)
+# M = len(attributeNames)
+# C_mpaa = len(mpaa_name)
+# C_genre = len(genre_name)
+#
+# # REGRESSION
+#
+# # Budget vs. Gross Scatterplot
 # plt.figure(figsize=(8, 6))
-# plt.scatter(X[:, 3], data['runtime'], alpha=0.5)
-# plt.xlabel('Runtime')
+# plt.scatter(X[:, 2], data['Gross'], alpha=0.5)
+# plt.xlabel('Budget')
 # plt.ylabel('Gross')
+# plt.title('Budget vs. Gross Scatterplot')
+# plt.show()
+# # Release Date vs. Gross Line Plot
+# # =============================================================================
+# # plt.figure(figsize=(12, 6))
+# # data.groupby('release_date')['Gross'].mean().plot()
+# # plt.xlabel('Release Date')
+# # plt.ylabel('Average Gross')
+# # plt.title('Release Date vs. Average Gross')
+# # plt.xticks(rotation=45)
+# # plt.show()
+# # =============================================================================
+# # # Runtime vs. Gross Scatterplot
+# # plt.figure(figsize=(8, 6))
+# # plt.scatter(X[:, 3], data['runtime'], alpha=0.5)
+# # plt.xlabel('Runtime')
+# # plt.ylabel('Gross')
+# # plt.title('Runtime vs. Gross Scatterplot')
+# # plt.show()
+# # data vs. runtime Scatterplot
+# plt.figure(figsize=(8, 6))
+# plt.scatter(X[:, 4], data['Budget'], alpha=0.5)
+# plt.xlabel('data')
+# plt.ylabel('budget')
 # plt.title('Runtime vs. Gross Scatterplot')
 # plt.show()
-# data vs. runtime Scatterplot
-plt.figure(figsize=(8, 6))
-plt.scatter(X[:, 4], data['Budget'], alpha=0.5)
-plt.xlabel('data')
-plt.ylabel('budget')
-plt.title('Runtime vs. Gross Scatterplot')
-plt.show()
-# Rating vs. Gross Scatterplot
-# plt.figure(figsize=(8, 6))
-# plt.scatter(X[:, 6], data['Budget'], alpha=0.5)
-# plt.xlabel('Rating')
-# plt.ylabel('Gross')
-# plt.title('Runtime vs. Gross Scatterplot')
-# plt.show()
-
-
-# Classification problem
-# The current variables X and y represent a classification problem, in
-# which a machine learning model will use the sepal and petal dimesions
-# (stored in the matrix X) to predict the class (species of Iris, stored in
-# the variable y). A relevant figure for this classification problem could
-# for instance be one that shows how the classes are distributed based on
-# two attributes in matrix X:
-X_c = X.copy()
-y_mpaa_c = y_mpaa.copy()
-y_genre_c = y_genre.copy()
-attributeNames_c = attributeNames.copy()
-
-# =============================================================================
-# i = 1
-# j = 2
-# mpaa_color = ['r', 'g', 'b','p']
-# plt.title('Mpaa rating classification problem')
-# for c in range(len(mpaa_name)):
-#     idx = y_mpaa_c == c
+# # Rating vs. Gross Scatterplot
+# # plt.figure(figsize=(8, 6))
+# # plt.scatter(X[:, 6], data['Budget'], alpha=0.5)
+# # plt.xlabel('Rating')
+# # plt.ylabel('Gross')
+# # plt.title('Runtime vs. Gross Scatterplot')
+# # plt.show()
+#
+#
+# # Classification problem
+# # The current variables X and y represent a classification problem, in
+# # which a machine learning model will use the sepal and petal dimesions
+# # (stored in the matrix X) to predict the class (species of Iris, stored in
+# # the variable y). A relevant figure for this classification problem could
+# # for instance be one that shows how the classes are distributed based on
+# # two attributes in matrix X:
+# X_c = X.copy()
+# y_mpaa_c = y_mpaa.copy()
+# y_genre_c = y_genre.copy()
+# attributeNames_c = attributeNames.copy()
+#
+# # =============================================================================
+# # i = 1
+# # j = 2
+# # mpaa_color = ['r', 'g', 'b','p']
+# # plt.title('Mpaa rating classification problem')
+# # for c in range(len(mpaa_name)):
+# #     idx = y_mpaa_c == c
+# #     plt.scatter(x=X_c[idx, i],      # values in x-axe
+# #                 y=X_c[idx, j],      # values in y-axe
+# #                 c=mpaa_color[c],         # color per c in className
+# #                 s=50, alpha=0.5,    # s size of markers, alpha transparency
+# #                 label=mpaa_name[c])  # label name
+# # plt.legend()
+# # plt.xlabel(attributeNames_c[i])
+# # plt.ylabel(attributeNames_c[j])
+# # plt.show()
+# # =============================================================================
+#
+# genre_color = ['red', 'green', 'blue']
+# i = 2
+# j = 3
+# plt.title('Genre classification problem')
+# for c in range(len(genre_name[0:3])):
+#     idx = y_genre_c == c
 #     plt.scatter(x=X_c[idx, i],      # values in x-axe
 #                 y=X_c[idx, j],      # values in y-axe
-#                 c=mpaa_color[c],         # color per c in className
+#                 c=genre_color[c],         # color per c in className
 #                 s=50, alpha=0.5,    # s size of markers, alpha transparency
-#                 label=mpaa_name[c])  # label name
+#                 label=genre_name[c])  # label name
 # plt.legend()
 # plt.xlabel(attributeNames_c[i])
 # plt.ylabel(attributeNames_c[j])
 # plt.show()
+#
 # =============================================================================
-
-genre_color = ['red', 'green', 'blue']
-i = 2
-j = 3
-plt.title('Genre classification problem')
-for c in range(len(genre_name[0:3])):
-    idx = y_genre_c == c
-    plt.scatter(x=X_c[idx, i],      # values in x-axe
-                y=X_c[idx, j],      # values in y-axe
-                c=genre_color[c],         # color per c in className
-                s=50, alpha=0.5,    # s size of markers, alpha transparency
-                label=genre_name[c])  # label name
-plt.legend()
-plt.xlabel(attributeNames_c[i])
-plt.ylabel(attributeNames_c[j])
-plt.show()
->>>>>> > 72b3f90a71b358604f8a7f37e3dd0570c9d1c8e8
