@@ -16,7 +16,7 @@ NEW ONE
 
 """
 
-file_path = r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\Movies_DS.xls"
+file_path = r"C:\Users\Dell\Desktop\Git\Machine-Learning-report1\MAIN_Movies_DS.xls"
 doc = xlrd.open_workbook(file_path).sheet_by_index(0)
 
 # Extract attribute names
@@ -115,7 +115,7 @@ y_genre = y_genre[class_mask]
 
 N = X.shape[0]
 
-## PCA
+# PCA
 Xc = X - np.ones((N, 1))*X.mean(axis=0)
 Xc = Xc*(1/np.std(X, 0))
 # PCA by computing SVD of Y
