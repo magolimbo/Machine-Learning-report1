@@ -1,5 +1,6 @@
 # Exclude virtual environment
 venv/
+.venv/
 .env
 
 # Exclude Python bytecode files
